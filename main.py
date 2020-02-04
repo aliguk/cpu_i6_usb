@@ -23,19 +23,20 @@ print_mes = PrintMessage.PrintMessage()
 com_port = ComPort.ComPort(portname=PORTNAME)
 errors = CountErrors.CountErrors()
 
-# win = curses.initscr()
-# win.keypad(1)
-# curses.noecho()
-# curses.curs_set(0)
-# win.border(0)
-# win.nodelay(1)
-# win.addstr(3, 2, "Errors:")
-# win.addstr(10, 2, "Events:")
-# win.addstr(26, 2, " -- To Exit, press ESC -- ")
+win = curses.initscr()
+win.keypad(1)
+curses.noecho()
+curses.curs_set(0)
+win.border(0)
+win.nodelay(1)
+win.addstr(3, 2, "Errors:")
+win.addstr(6, 2, "Events:")
+win.addstr(26, 2, " -- To Exit, press ESC -- ")
 
 key = 0
 number_errors = 0
 count_errors = 0
+count_package = 0
 
 f_number_errors = False
 f_errors = False
@@ -43,20 +44,22 @@ f_errors = False
 start_time = time.time()
 try:
     while key != 27:
-        # key = win.getch()
-        #
-        # win.addstr(1, 2, datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
-        # win.addstr(1, 24, "{0:.0f} seconds".format(time.time() - start_time))
-        #
-        # i = 4
-        # for name, value in errors.errors_count.items():
-        #     win.addstr(i, 4, "{0:<8s} {1:<4d}".format(name, value))
-        #     i += 1
-        #
-        # i = 11
-        # for name, value in errors.events_count.items():
-        #     win.addstr(i, 4, "{0:<15s} {1:<4d}".format(name, value))
-        #     i += 1
+        key = win.getch()
+
+        win.addstr(1, 2, datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+        win.addstr(1, 24, "{0:.0f} seconds".format(time.time() - start_time))
+
+        i = 4
+        for name, value in errors.errors_count.items():
+            win.addstr(i, 4, "{0:<8s} {1:<4d}".format(name, value))
+            i += 1
+
+        i = 7
+        for name, value in errors.events_count.items():
+            win.addstr(i, 4, "{0:<15s} {1:<4d}".format(name, value))
+            i += 1
+
+        win.addstr(17, 2, "{0:<17s} {1:<4d}".format("Packages", count_package))
 
         data = com_port.read()
 
@@ -93,6 +96,10 @@ try:
         elif data == COM_UNRESET_DEVICE:
             print_mes.error(data, "Unreset CPUi6")
             errors.event_inc(errors.UNRESET_DEVICE)
+            number_errors = 0
+            count_errors = 0
+            f_number_errors = False
+            f_errors = False
 
         elif data == COM_MACHINE:
             print_mes.error(data, "Machine Error")
@@ -110,6 +117,7 @@ try:
 
         elif f_number_errors is True:
             f_number_errors = False
+            count_package += 1
             if int(data, 16) == 0:
                 print_mes.info(data, "Number errors: 0")
             else:
